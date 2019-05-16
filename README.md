@@ -6,7 +6,7 @@ React Fiber is an ongoing reimplementation of React's core algorithm. It is the 
 
 The goal of React Fiber is to increase its suitability for areas like animation, layout, and gestures. Its headline feature is **incremental rendering**: the ability to split rendering work into chunks and spread it out over multiple frames.
 
-Other key features include the ability to pause, abort, or reuse work as new updates come in; the ability to assign priority to different types of updates; and new concurrency primitives.
+Other key features include the ability to pause, abort, or reuse work as new updates come in; the ability to assign priority to different types of updates; and new concurrency primitives(并发原语).
 
 ### About this document
 
@@ -16,7 +16,7 @@ I'll attempt to use the plainest language possible, and to avoid jargon by expli
 
 Please note that I am not on the React team, and do not speak from any authority. **This is not an official document**. I have asked members of the React team to review it for accuracy.
 
-This is also a work in progress. **Fiber is an ongoing project that will likely undergo significant refactors before it's completed.** Also ongoing are my attempts at documenting its design here. Improvements and suggestions are highly welcome.
+This is also a work in progress. **Fiber is an ongoing project that will likely undergo significant(重大) refactors(重构 before it's completed.** Also ongoing are my attempts at documenting its design here. Improvements and suggestions are highly welcome.
 
 My goal is that after reading this document, you will understand Fiber well enough to [follow along as it's implemented](https://github.com/facebook/react/commits/master/src/renderers/shared/fiber), and eventually even be able to contribute back to React.
 
@@ -100,7 +100,7 @@ Now we're ready to dive into Fiber's implementation. The next section is more te
 
 ## What is a fiber?
 
-We're about to discuss the heart of React Fiber's architecture. Fibers are a much lower-level abstraction than application developers typically think about. If you find yourself frustrated in your attempts to understand it, don't feel discouraged. Keep trying and it will eventually make sense. (When you do finally get it, please suggest how to improve this section.)
+We're about to discuss the heart of React Fiber's architecture. Fibers are a much lower-level abstraction than application developers typically think about. If you find yourself frustrated(受挫) in your attempts to understand it, don't feel discouraged. Keep trying and it will eventually make sense. (When you do finally get it, please suggest how to improve this section.)
 
 Here we go!
 
@@ -108,12 +108,12 @@ Here we go!
 
 We've established that a primary goal of Fiber is to enable React to take advantage of scheduling. Specifically, we need to be able to
 
-- pause work and come back to it later.
-- assign priority to different types of work.
-- reuse previously completed work.
-- abort work if it's no longer needed.
+- pause work and come back to it later.            (暂停工作,并且稍后返回它)
+- assign priority to different types of work.      (为不同类型的工作分配优先级)
+- reuse previously completed work.                 (重用)
+- abort work if it's no longer needed.             (放弃不再需要的工作)
 
-In order to do any of this, we first need a way to break work down into units. In one sense, that's what a fiber is. A fiber represents a **unit of work**.
+In order to do any of this, we first need a way to break work down into units. In one sense(在某种意义上), that's what a fiber is. A fiber represents a **unit of work**.
 
 To go further, let's go back to the conception of [React components as functions of data](https://github.com/reactjs/react-basic#transformation), commonly expressed as
 
@@ -121,15 +121,17 @@ To go further, let's go back to the conception of [React components as functions
 v = f(d)
 ```
 
-It follows that rendering a React app is akin to calling a function whose body contains calls to other functions, and so on. This analogy is useful when thinking about fibers.
+It follows that rendering a React app is akin(类似) to calling a function whose body contains calls to other functions, and so on. This analogy is useful when thinking about fibers.
+
+(渲染React应用程序类似于调用 其主体包含对其他函数的调用 的函数)
 
 The way computers typically track a program's execution is using the [call stack](https://en.wikipedia.org/wiki/Call_stack). When a function is executed, a new **stack frame** is added to the stack. That stack frame represents the work that is performed by that function.
 
-When dealing with UIs, the problem is that if too much work is executed all at once, it can cause animations to drop frames and look choppy. What's more, some of that work may be unnecessary if it's superseded by a more recent update. This is where the comparison between UI components and function breaks down, because components have more specific concerns than functions in general.
+When dealing with UIs, the problem is that if too much work is executed all at once, it can cause animations to drop frames and look choppy. What's more, some of that work may be unnecessary if it's superseded(被取代) by a more recent update. This is where the comparison between UI components and function breaks down, because components have more specific concerns than functions in general.
 
 Newer browsers (and React Native) implement APIs that help address this exact problem: `requestIdleCallback` schedules a low priority function to be called during an idle period, and `requestAnimationFrame` schedules a high priority function to be called on the next animation frame. The problem is that, in order to use those APIs, you need a way to break rendering work into incremental units. If you rely only on the call stack, it will keep doing work until the stack is empty.
 
-Wouldn't it be great if we could customize the behavior of the call stack to optimize for rendering UIs? Wouldn't it be great if we could interrupt the call stack at will and manipulate stack frames manually?
+Wouldn't it be great if we could customize the behavior of the call stack to optimize for rendering UIs? (如果我们可以自定义调用堆栈的行为以优化渲染UI，那不是很好吗？)Wouldn't it be great if we could interrupt the call stack at will and manipulate stack frames manually?
 
 That's the purpose of React Fiber. Fiber is reimplementation of the stack, specialized for React components. You can think of a single fiber as a **virtual stack frame**.
 
